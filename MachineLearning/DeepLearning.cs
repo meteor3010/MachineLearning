@@ -10,7 +10,7 @@ namespace MachineLearning
 	public class DeepLearning : IMachineLearning
 	{
 		#region Constants
-		const double LEARNING_RATE = 0.1;
+		const double LEARNING_RATE = 0.02;
 		#endregion
 
 		#region Public Properties
@@ -140,9 +140,7 @@ namespace MachineLearning
 
 			for (int i = 1; i < NumberOfLayers + 1; i++)
 			{
-				List<List<double>> act = MatrixCalculus.Add(MatrixCalculus.Multiply(WeightsHidden[i], ActivationsHiddenSigmoid[i - 1]), BiasHidden[i]);
-				List<List<double>> sig = MatrixCalculus.Sigmoid(act);
-				ActivationsHiddenSigmoid.Add(sig);
+				ActivationsHiddenSigmoid.Add(MatrixCalculus.Sigmoid(MatrixCalculus.Add(MatrixCalculus.Multiply(WeightsHidden[i], ActivationsHiddenSigmoid[i - 1]), BiasHidden[i])));
 			}
 
 			return ActivationsHiddenSigmoid.Last();
@@ -183,10 +181,8 @@ namespace MachineLearning
 			}
 
 			List<List<double>> errorFirstMatrix = MatrixCalculus.Multiply(MatrixCalculus.Transpose(WeightsHidden[1]), Errors[NumberOfLayers - 1]);
-			List<List<double>> deltaWeightsIH = MatrixCalculus.Multiply(GetDeltaError(errorFirstMatrix, ActivationsHiddenSigmoid[0]), MatrixCalculus.Transpose(inputMatrix));
-			deltaWeights.Add(deltaWeightsIH);
-			List<List<double>> deltaBiasIH = GetDeltaError(errorFirstMatrix, ActivationsHiddenSigmoid[0]);
-			deltaBias.Add(deltaBiasIH);
+			deltaWeights.Add(MatrixCalculus.Multiply(GetDeltaError(errorFirstMatrix, ActivationsHiddenSigmoid[0]), MatrixCalculus.Transpose(inputMatrix)));
+			deltaBias.Add(GetDeltaError(errorFirstMatrix, ActivationsHiddenSigmoid[0]));
 
 			for (int i = 0; i < deltaWeights.Count; i++)
 			{
