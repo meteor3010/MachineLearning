@@ -13,7 +13,7 @@ namespace MachineLearning
             int nInput = 2;
             int nOutput = 1;
             int neuronsPerLayers = 3;
-            int nLayers = 1;
+            int nLayers = 2;
 
 			DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
 			//SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
