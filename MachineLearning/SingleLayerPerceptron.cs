@@ -7,29 +7,32 @@ using System.Threading.Tasks;
 
 namespace MachineLearning
 {
-    public class SingleLayerPerceptron
+    public class SingleLayerPerceptron : IMachineLearning
     {
-        public int NumberInput;
+		#region Private Contants
+		const double LEARNING_RATE = 0.1;
+		#endregion
+
+		#region Public Method
+		public int NumberInput;
         public int NumberNeurons;
         public int NumberOutput;
+		#endregion
 
-        const double m_LearningRate = 0.1;
+		#region Private Properties
+		private List<List<double>> weightsIH;
+        private List<List<double>> biasIH;
+        private List<List<double>> weightsHO;
+        private List<List<double>> biasHO;
+        private List<List<double>> ActivationHiddenSigmoid;
+        #endregion
 
-        List<List<double>> weightsIH;
-        List<List<double>> biasIH;
-
-        List<List<double>> weightsHO;
-        List<List<double>> biasHO;
-
-        List<List<double>> ActivationHiddenSigmoid;
-
+        #region Ctor
         public SingleLayerPerceptron(int numberInput, int nNeurons, int numberOutput)
         {
             NumberInput = numberInput;
             NumberNeurons = nNeurons;
             NumberOutput = numberOutput;
-
-            Random random = new Random(Guid.NewGuid().GetHashCode());
 
             weightsIH = new List<List<double>>();
             weightsHO = new List<List<double>>();
@@ -64,8 +67,9 @@ namespace MachineLearning
                 biasHO.Add(rowB);
             }
         }
+        #endregion
 
-
+        #region Public Methods
         public List<double> Predict(List<double> datas)
         {
             List<List<double>> matrix = MatrixCalculus.GetMatrix(datas);
@@ -77,8 +81,7 @@ namespace MachineLearning
 
         public List<List<double>> Predict(List<List<double>> data)
         {
-            List<List<double>> activationHidden = new List<List<double>>();
-            activationHidden = MatrixCalculus.Add(MatrixCalculus.Multiply(weightsIH, data), biasIH);
+            List<List<double>> activationHidden = MatrixCalculus.Add(MatrixCalculus.Multiply(weightsIH, data), biasIH);
 
             ActivationHiddenSigmoid = MatrixCalculus.Sigmoid(activationHidden);
 
@@ -102,13 +105,15 @@ namespace MachineLearning
             List<List<double>> inputMatrix = MatrixCalculus.GetMatrix(datas);
 
             List<List<double>> guess = Predict(inputMatrix);
+
+            //Hidden-Out
             List<List<double>> errorMatrix = MatrixCalculus.Substract(resultMatrix, guess);
-            List<List<double>> errorHiddenMatrix = MatrixCalculus.Multiply(MatrixCalculus.Transpose(weightsHO), errorMatrix);
-
             List<List<double>> deltaWeightsHO = MatrixCalculus.Multiply(GetDeltaError(errorMatrix, guess), MatrixCalculus.Transpose(ActivationHiddenSigmoid));
-            List<List<double>> deltaWeightsIH = MatrixCalculus.Multiply(GetDeltaError(errorHiddenMatrix, ActivationHiddenSigmoid), MatrixCalculus.Transpose(inputMatrix));
-
             List<List<double>> deltaBiasHO = GetDeltaError(errorMatrix, guess);
+
+            //In-Hidden
+            List<List<double>> errorHiddenMatrix = MatrixCalculus.Multiply(MatrixCalculus.Transpose(weightsHO), errorMatrix);
+            List<List<double>> deltaWeightsIH = MatrixCalculus.Multiply(GetDeltaError(errorHiddenMatrix, ActivationHiddenSigmoid), MatrixCalculus.Transpose(inputMatrix));
             List<List<double>> deltaBiasIH = GetDeltaError(errorHiddenMatrix, ActivationHiddenSigmoid);
 
             weightsHO = MatrixCalculus.Add(weightsHO, deltaWeightsHO);
@@ -117,8 +122,10 @@ namespace MachineLearning
             biasHO = MatrixCalculus.Add(biasHO, deltaBiasHO);
             biasIH = MatrixCalculus.Add(biasIH, deltaBiasIH);
         }
+		#endregion
 
-        private List<List<double>> GetDeltaError(List<List<double>> errorMatrix, List<List<double>> resultMatrix)
+		#region Private Methods
+		private List<List<double>> GetDeltaError(List<List<double>> errorMatrix, List<List<double>> resultMatrix)
         {
             int n = resultMatrix.Count;
             int m = resultMatrix[0].Count;
@@ -129,14 +136,13 @@ namespace MachineLearning
                 MatrixCalculus.HadamarProduct(
                     errorMatrix
                 , dSigmoid)
-                , m_LearningRate);
+                , LEARNING_RATE);
         }
-
-
 
         private static double derivativeSigmoid(double number)
         {
             return number * (1 - number);
         }
+		#endregion
     }
 }

@@ -13,12 +13,12 @@ namespace MachineLearning
             int nInput = 2;
             int nOutput = 1;
             int neuronsPerLayers = 3;
-            int nLayers = 2;
+            int nLayers = 1;
 
-            //DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
-            SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
+			DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
+			//SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
 
-            for (int i = 0; i < 100000; i++)
+			for (int i = 0; i < 100000; i++)
             {
                 Random random = new Random(Guid.NewGuid().GetHashCode());
                 int value1 = random.Next() % 2;
