@@ -1,4 +1,6 @@
 ﻿using MachineLearning.Calculus;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace MachineLearning
 {
-	public class DeepLearning : IMachineLearning
+	public class DeepLearning : BaseLearning, IMachineLearning
 	{
 		#region Constants
-		const double LEARNING_RATE = 0.02;
+		const double LEARNING_RATE = 0.1;
 		#endregion
 
 		#region Public Properties
@@ -21,19 +23,9 @@ namespace MachineLearning
 		#endregion
 
 		#region Private Properties
-		/// <summary>
-		/// List Of Matrix
-		/// </summary>
-		private List<List<List<double>>> WeightsHidden;
-		/// <summary>
-		/// List Of Matrix
-		/// </summary>
-		private List<List<List<double>>> BiasHidden;
-		/// <summary>
-		/// List of all the Activations Matrix of the hidden layers
-		/// </summary>
-		private List<List<List<double>>> ActivationsHiddenSigmoid;
-		private List<List<List<double>>> Errors;
+		private List<Matrix<double>> WeightsHidden;
+		private List<Matrix<double>> BiasHidden;
+		private List<Matrix<double>> ActivationsHiddenSigmoid;
 		#endregion
 
 		#region Ctor
@@ -45,185 +37,95 @@ namespace MachineLearning
 			NumberOutput = numberOutput;
 			NumberOfLayers = numberOfLayers;
 
-			//weightsIH = new List<List<double>>();
-			WeightsHidden = new List<List<List<double>>>();
-			//biasIH = new List<List<double>>();
-			BiasHidden = new List<List<List<double>>>();
-			ActivationsHiddenSigmoid = new List<List<List<double>>>();
-			Errors = new List<List<List<double>>>();
+			WeightsHidden = new List<Matrix<double>>();
+			BiasHidden = new List<Matrix<double>>();
+			ActivationsHiddenSigmoid = new List<Matrix<double>>();
 
-			//The first layer is different because it is connected to all the Inputs
-			List<List<double>> weightsIH = new List<List<double>>();
-			List<List<double>> biasIH = new List<List<double>>();
-
-			WeightsHidden.Add(weightsIH);
-			BiasHidden.Add(biasIH);
-
-			//Set the first hidden layer with radom values
-			for (int i = 0; i < NumberNeurons; i++)
-			{
-				List<double> row = new List<double>();
-				weightsIH.Add(row);
-
-				for (int j = 0; j < NumberInput; j++)
-					row.Add((new Random(Guid.NewGuid().GetHashCode()).NextDouble()) / 10);
-
-				List<double> rowB = new List<double>();
-				rowB.Add((new Random(Guid.NewGuid().GetHashCode()).NextDouble()) / 10);
-				biasIH.Add(rowB);
-			}
+			WeightsHidden.Add(CreateMatrix.Random<double>(NumberNeurons, NumberInput, new ContinuousUniform(0, 0.1)));
+			BiasHidden.Add(CreateMatrix.Random<double>(NumberNeurons, 1, new ContinuousUniform(0, 0.1)));
 
 			//Set the hidden weights with random values
 			for (int k = 0; k < NumberOfLayers - 1; k++)
 			{
-				List<List<double>> weights = new List<List<double>>();
-				List<List<double>> bias = new List<List<double>>();
-				WeightsHidden.Add(weights);
-				BiasHidden.Add(bias);
-
-				for (int i = 0; i < NumberNeurons; i++)
-				{
-					List<double> row = new List<double>();
-					weights.Add(row);
-
-					for (int j = 0; j < NumberNeurons; j++)
-						row.Add((new Random(Guid.NewGuid().GetHashCode()).NextDouble()) / 10);
-
-					List<double> rowB = new List<double>();
-					rowB.Add((new Random(Guid.NewGuid().GetHashCode()).NextDouble()) / 10);
-					bias.Add(rowB);
-				}
+				WeightsHidden.Add(CreateMatrix.Random<double>(NumberNeurons, NumberNeurons, new ContinuousUniform(0, 0.1)));
+				BiasHidden.Add(CreateMatrix.Random<double>(NumberNeurons, 1, new ContinuousUniform(0, 0.1)));
 			}
 
-			List<List<double>> biasHO = new List<List<double>>();
-			List<List<double>> weightsHO = new List<List<double>>();
-			WeightsHidden.Add(weightsHO);
-			BiasHidden.Add(biasHO);
-
-			//Set the last layer of neurons with radoms values
-			for (int i = 0; i < NumberOutput; i++)
-			{
-				List<double> row = new List<double>();
-				weightsHO.Add(row);
-
-				for (int j = 0; j < NumberNeurons; j++)
-					row.Add((new Random(Guid.NewGuid().GetHashCode()).NextDouble()) / 10);
-
-				List<double> rowB = new List<double>();
-				rowB.Add((new Random(Guid.NewGuid().GetHashCode()).NextDouble()) / 10);
-				biasHO.Add(rowB);
-			}
+			WeightsHidden.Add(CreateMatrix.Random<double>(NumberOutput, NumberNeurons, new ContinuousUniform(0, 0.1)));
+			BiasHidden.Add(CreateMatrix.Random<double>(NumberOutput, 1, new ContinuousUniform(0, 0.1)));
 		}
 		#endregion
 
 		#region Public Methods
-		public List<double> Predict(List<double> datas)
-		{
-			List<List<double>> matrix = MatrixCalculus.GetMatrix(datas);
-			List<List<double>> result = Predict(matrix);
-			List<double> output = MatrixCalculus.ToArray(result);
-
-			return output;
-		}
-
 		/// <summary>
 		/// Seems to Work
 		/// </summary>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public List<List<double>> Predict(List<List<double>> data)
+		internal override Matrix<double> Predict(IEnumerable<IEnumerable<double>> data)
 		{
 			ActivationsHiddenSigmoid.Clear();
+			var datasMatrix = CreateMatrix.DenseOfRows(data);
 
-			List<List<double>> activationHidden = MatrixCalculus.Add(MatrixCalculus.Multiply(WeightsHidden[0], data), BiasHidden[0]);
-			ActivationsHiddenSigmoid.Add(MatrixCalculus.Sigmoid(activationHidden));
+			var actHidden = (WeightsHidden.First() * datasMatrix) + BiasHidden.First();
+			ActivationsHiddenSigmoid.Add(actHidden.Map(Tools.Sigmoid));
 
 			for (int i = 1; i < NumberOfLayers + 1; i++)
 			{
-				ActivationsHiddenSigmoid.Add(MatrixCalculus.Sigmoid(MatrixCalculus.Add(MatrixCalculus.Multiply(WeightsHidden[i], ActivationsHiddenSigmoid[i - 1]), BiasHidden[i])));
+				ActivationsHiddenSigmoid.Add(((WeightsHidden[i] * ActivationsHiddenSigmoid[i - 1]) + BiasHidden[i]).Map(Tools.Sigmoid));
 			}
 
 			return ActivationsHiddenSigmoid.Last();
 		}
 
-		public void Train(List<List<double>> dataSet, List<List<double>> expectedValues)
+		public override void Train(IList<double> datas, IList<double> expectedValues)
 		{
-			for (int i = 0; i < dataSet.Count; i++)
-			{
-				Train(dataSet[i], expectedValues[i]);
-			}
-		}
+			var errors = new List<Matrix<double>> ();
 
-		public void Train(List<double> datas, List<double> expectedValues)
-		{
-			Errors.Clear();
-			List<List<List<double>>> deltaWeights = new List<List<List<double>>>();
-			List<List<List<double>>> deltaBias = new List<List<List<double>>>();
+			var deltaWeight = new List<Matrix<double>>();
+			var deltaBiais = new List<Matrix<double>>();
 
-			List<List<double>> resultMatrix = GetMatrix(expectedValues);
-			List<List<double>> inputMatrix = GetMatrix(datas);
+			IEnumerable<IEnumerable<double>> resultMatrix = expectedValues.ToMatrix();
+			IEnumerable<IEnumerable<double>> inputMatrix = datas.ToMatrix();
 
-			List<List<double>> guess = Predict(inputMatrix);
-			List<List<double>> errorMatrix = MatrixCalculus.Substract(resultMatrix, guess);
-			Errors.Add(errorMatrix);
+			var result = CreateMatrix.DenseOfRows(resultMatrix);
+			var input = CreateMatrix.DenseOfRows(inputMatrix);
+			var guess = Predict(inputMatrix);
 
-			deltaWeights.Add(MatrixCalculus.Multiply(GetDeltaError(errorMatrix, guess), MatrixCalculus.Transpose(ActivationsHiddenSigmoid[NumberOfLayers - 1])));
-			deltaBias.Add(GetDeltaError(errorMatrix, guess));
+			var errorM = result - guess;
+			errors.Add(errorM);
+
+			deltaWeight.Add(errorM.GetDeltaError(guess, LEARNING_RATE) * ActivationsHiddenSigmoid[NumberOfLayers - 1].Transpose());
+			deltaBiais.Add(errorM.GetDeltaError(guess, LEARNING_RATE));
 
 			for (int i = 1; i < NumberOfLayers; i++)
 			{
 				//weightsHidden is backpropagated but Errors and deltaWeights not !!!
-				List<List<double>> errorHiddenMatrix = MatrixCalculus.Multiply(MatrixCalculus.Transpose(WeightsHidden[NumberOfLayers + 1 - i]), Errors[i - 1]);
-				Errors.Add(errorHiddenMatrix);
+				var errorHiddenMatrix = WeightsHidden[NumberOfLayers + 1 - i].Transpose() * errors[i - 1];
+				errors.Add(errorHiddenMatrix);
 
-				deltaWeights.Add(MatrixCalculus.Multiply(GetDeltaError(errorHiddenMatrix, ActivationsHiddenSigmoid[NumberOfLayers - i]), MatrixCalculus.Transpose(ActivationsHiddenSigmoid[NumberOfLayers - i - 1])));
-				deltaBias.Add(GetDeltaError(errorHiddenMatrix, ActivationsHiddenSigmoid[NumberOfLayers - i - 1]));
+				deltaWeight.Add(errorHiddenMatrix.GetDeltaError(ActivationsHiddenSigmoid[NumberOfLayers - i], LEARNING_RATE) * ActivationsHiddenSigmoid[NumberOfLayers - i - 1].Transpose());
+				deltaBiais.Add(errorHiddenMatrix.GetDeltaError(ActivationsHiddenSigmoid[NumberOfLayers - i - 1], LEARNING_RATE));
 			}
 
-			List<List<double>> errorFirstMatrix = MatrixCalculus.Multiply(MatrixCalculus.Transpose(WeightsHidden[1]), Errors[NumberOfLayers - 1]);
-			deltaWeights.Add(MatrixCalculus.Multiply(GetDeltaError(errorFirstMatrix, ActivationsHiddenSigmoid[0]), MatrixCalculus.Transpose(inputMatrix)));
-			deltaBias.Add(GetDeltaError(errorFirstMatrix, ActivationsHiddenSigmoid[0]));
+			var errorFirstMatrix = WeightsHidden[1].Transpose() * errors[NumberOfLayers - 1];
+			deltaWeight.Add(errorFirstMatrix.GetDeltaError(ActivationsHiddenSigmoid[0], LEARNING_RATE) * input.Transpose());
+			deltaBiais.Add(errorFirstMatrix.GetDeltaError(ActivationsHiddenSigmoid[0], LEARNING_RATE));
 
-			for (int i = 0; i < deltaWeights.Count; i++)
+			for (int i = 0; i < deltaWeight.Count; i++)
 			{
-				WeightsHidden[i] = MatrixCalculus.Add(WeightsHidden[i], deltaWeights[deltaWeights.Count - 1 - i]);
+				WeightsHidden[i] += deltaWeight[deltaWeight.Count - 1 - i];
 			}
 
-			for (int i = 0; i < deltaBias.Count; i++)
+			for (int i = 0; i < deltaBiais.Count; i++)
 			{
-				BiasHidden[i] = MatrixCalculus.Add(BiasHidden[i], deltaBias[deltaBias.Count - 1 - i]);
+				BiasHidden[i] = BiasHidden[i] + deltaBiais[deltaBiais.Count - 1 - i];
 			}
 		}
 		#endregion
 
 		#region Private Methods
-		private List<List<double>> GetDeltaError(List<List<double>> errorMatrix, List<List<double>> resultMatrix)
-		{
-			int n = resultMatrix.Count;
-			int m = resultMatrix[0].Count;
 
-			List<List<double>> dSigmoid = MatrixCalculus.Map(resultMatrix, derivativeSigmoid);
-
-			return MatrixCalculus.Multiply(
-				MatrixCalculus.HadamarProduct(
-					errorMatrix
-				, dSigmoid)
-				, LEARNING_RATE);
-		}
-
-		private static List<List<double>> GetMatrix(List<double> expectedValues)
-		{
-			List<List<double>> expectedValues2 = new List<List<double>>();
-			foreach (double value in expectedValues)
-				expectedValues2.Add(new List<double>() { value });
-
-			return expectedValues2;
-		}
-
-		private static double derivativeSigmoid(double number)
-		{
-			return number * (1 - number);
-		}
 		#endregion
 	}
 }
