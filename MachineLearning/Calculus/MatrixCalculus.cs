@@ -215,7 +215,7 @@ namespace MachineLearning.Calculus
             return -1;
         }
 
-        private static double Sigmoid(double number)
+        public static double Sigmoid(double number)
         {
             return 1.0 / (1 + Math.Exp(-number));
         }

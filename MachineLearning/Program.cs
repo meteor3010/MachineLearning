@@ -12,13 +12,13 @@ namespace MachineLearning
 		{
 			int nInput = 2;
 			int nOutput = 1;
-			int neuronsPerLayers = 3;
-			int nLayers = 3;
+			int neuronsPerLayers = 2;
+			int nLayers = 2;
 
-			DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
-			//SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
+			//DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
+			SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
 
-			var nPoints = 100000000;
+			var nPoints = 100000;
 
 			for (int i = 0; i < nPoints; i++)
 			{
@@ -31,11 +31,11 @@ namespace MachineLearning
 
 				slp.Train(new List<double>() { value1, value2 }, new List<double>() { xor });
 				var percent = Math.Round(i * 100.0 / nPoints, 4);
-				if (percent == (int)percent)
-				{
-					Console.Clear();
-					Console.WriteLine(percent);
-				}
+				//if (percent == (int)percent)
+				//{
+				//	Console.Clear();
+				//	Console.WriteLine(percent);
+				//}
 			}
 
 			double n = 0;
@@ -49,7 +49,7 @@ namespace MachineLearning
 
 				int xor = XOR(value1, value2);
 
-				List<double> guess = slp.Predict(new List<double>() { value1, value2 });
+				var guess = slp.Predict(new List<double>() { value1, value2 });
 				double result = guess[0] > 0.5 ? 1 : 0;
 				bool correct = result == xor;
 				Console.WriteLine("xor : " + xor);
@@ -88,7 +88,7 @@ namespace MachineLearning
 
 				int xor = XOR(value1, value2);
 
-				List<double> guess = slp.Predict(new List<double>() { value1, value2 });
+				var guess = slp.Predict(new List<double>() { value1, value2 });
 				double result = guess[0] > 0.5 ? 1 : 0;
 				bool correct = result == xor;
 				Console.WriteLine("xor : " + xor);
@@ -132,7 +132,7 @@ namespace MachineLearning
 				double y = Formula(value1);
 
 				double result = value2 > y ? 1 : 0;
-				List<double> guess = slp.Predict(new List<double>() { value1, value2 });
+				var guess = slp.Predict(new List<double>() { value1, value2 });
 				double proj = guess[0] > 0.5 ? 1 : 0;
 
 				bool correct = proj == result;
