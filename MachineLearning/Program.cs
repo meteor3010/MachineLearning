@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,11 +13,11 @@ namespace MachineLearning
 		{
 			int nInput = 2;
 			int nOutput = 1;
-			int neuronsPerLayers = 2;
-			int nLayers = 2;
+			int neuronsPerLayers = 20;
+			int nLayers = 3;
 
-			//DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
-			SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
+			DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
+			//SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
 
 			var nPoints = 100000;
 
@@ -52,13 +53,30 @@ namespace MachineLearning
 				var guess = slp.Predict(new List<double>() { value1, value2 });
 				double result = guess[0] > 0.5 ? 1 : 0;
 				bool correct = result == xor;
-				Console.WriteLine("xor : " + xor);
+				Console.WriteLine("xor : " + value1 + " X " + value2);
 				Console.WriteLine("guess : " + guess[0]);
 				Console.WriteLine("--");
 				if (correct)
 				{
 					n++;
 				}
+			}
+
+			//to debug
+			{
+				Random random = new Random(Guid.NewGuid().GetHashCode());
+				int value1 = random.Next() % 2;
+				random = new Random(Guid.NewGuid().GetHashCode());
+				int value2 = random.Next() % 2;
+
+				int xor = XOR(value1, value2);
+
+				slp.Train(new List<double>() { value1, value2 }, new List<double>() { xor });
+				//if (percent == (int)percent)
+				//{
+				//	Console.Clear();
+				//	Console.WriteLine(percent);
+				//}
 			}
 			Console.WriteLine(n / nTestCase);
 			Console.Read();
@@ -177,7 +195,7 @@ namespace MachineLearning
 				double y = Formula(value1);
 
 				double result = value2 > y ? 1 : -1;
-				double guess = nn2.Predict(new List<double>() { value1, value2 });
+				var guess = nn2.Predict(new List<double>() { value1, value2 }).First();
 				bool correct = result / guess > 0;
 				Console.WriteLine("result : " + result);
 				Console.WriteLine("guess : " + guess);
@@ -231,7 +249,7 @@ namespace MachineLearning
 
 				int xor = AndBool(value1, value2);
 
-				double guess = nn2.Predict(new List<double>() { value1, value2 });
+				double guess = nn2.Predict(new List<double>() { value1, value2 }).First();
 				Console.WriteLine("xor : " + xor);
 				Console.WriteLine("guess : " + guess);
 				Console.WriteLine("correct : " + (xor / guess > 0));

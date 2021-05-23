@@ -39,7 +39,7 @@ namespace MachineLearning
 			bias = random.NextDouble();
 		}
 
-		public double Predict(List<double> datas)
+		public double[] Predict(IList<double> datas)
 		{
 			double result = 0;
 			for (int i = 0; i < datas.Count; i++)
@@ -47,14 +47,14 @@ namespace MachineLearning
 				result += weights[i] * datas[i] + bias;
 			}
 
-			return result;
+			return new double[] { result };
 		}
 
-		public void Train(List<double> datas, double result)
+		public void Train(IList<double> datas, double result)
 		{
-			double guess = Predict(datas);
+			double guess = Predict(datas).First();
 
-			if (Sign(guess) != result)
+			if (Math.Sign(guess) != result)
 			{
 				for (int i = 0; i < weights.Count; i++)
 				{
@@ -63,37 +63,17 @@ namespace MachineLearning
 
 				bias += LEARNING_RATE * (result - guess);
 			}
-
 		}
 
-		public void Train(List<double> datas, List<double> expectedValues)
+		public void Train(IList<double> datas, IList<double> expectedValues)
 		{
 			if (expectedValues.Count > 0)
 				Train(datas, expectedValues.First());
 		}
 
-		public void Train(List<List<double>> dataSet, List<List<double>> expectedValues)
-		{
-			for (int i = 0; i < dataSet.Count; i++)
-			{
-				Train(dataSet[i], expectedValues[i]);
-			}
-		}
-
-		List<double> IMachineLearning.Predict(List<double> datas)
-		{
-			return new List<double> { Predict(datas) };
-		}
 		#endregion
 
 		#region Private Methods
-		private static double Sign(double number)
-		{
-			if (number > 0)
-				return 1;
-
-			return -1;
-		}
 		#endregion
 	}
 }

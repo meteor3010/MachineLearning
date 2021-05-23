@@ -6,11 +6,8 @@ namespace MachineLearning
 {
 	public interface IMachineLearning
 	{
+		void Train(IList<double> datas, IList<double> expectedValues);
 
-		void Train(List<double> datas, List<double> expectedValues);
-
-		void Train(List<List<double>> dataSet, List<List<double>> expectedValues);
-
-		List<double> Predict(List<double> datas);
+		double[] Predict(IList<double> datas);
 	}
 }
