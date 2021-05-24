@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections;
+﻿using MachineLearning;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MachineLearning
+namespace ConsoleProject
 {
 	class Program
 	{
@@ -13,13 +12,13 @@ namespace MachineLearning
 		{
 			int nInput = 2;
 			int nOutput = 1;
-			int neuronsPerLayers = 20;
+			int neuronsPerLayers = 10;
 			int nLayers = 3;
 
 			DeepLearning slp = new DeepLearning(nInput, neuronsPerLayers, nOutput, nLayers);
 			//SingleLayerPerceptron slp = new SingleLayerPerceptron(nInput, neuronsPerLayers, nOutput);
 
-			var nPoints = 100000;
+			var nPoints = 10000;
 
 			for (int i = 0; i < nPoints; i++)
 			{
@@ -27,10 +26,13 @@ namespace MachineLearning
 				int value1 = random.Next() % 2;
 				random = new Random(Guid.NewGuid().GetHashCode());
 				int value2 = random.Next() % 2;
+				random = new Random(Guid.NewGuid().GetHashCode());
+				int value3 = random.Next() % 2;
 
-				int xor = XOR(value1, value2);
+				//int xor = XOR(value1, value2);
+				int correctValue = ComplexeBoolMethod(value1, value2, value3);
 
-				slp.Train(new List<double>() { value1, value2 }, new List<double>() { xor });
+				slp.Train(new List<double>() { value1, value2 }, new List<double>() { correctValue });
 				var percent = Math.Round(i * 100.0 / nPoints, 4);
 				//if (percent == (int)percent)
 				//{
@@ -47,13 +49,16 @@ namespace MachineLearning
 				int value1 = random.Next() % 2;
 				random = new Random(Guid.NewGuid().GetHashCode());
 				int value2 = random.Next() % 2;
+				random = new Random(Guid.NewGuid().GetHashCode());
+				int value3 = random.Next() % 2;
 
-				int xor = XOR(value1, value2);
+				//int xor = XOR(value1, value2);
+				int correctValue = ComplexeBoolMethod(value1, value2, value3);
 
 				var guess = slp.Predict(new List<double>() { value1, value2 });
 				double result = guess[0] > 0.5 ? 1 : 0;
-				bool correct = result == xor;
-				Console.WriteLine("xor : " + value1 + " X " + value2);
+				bool correct = result == correctValue;
+				Console.WriteLine("correct value : " + correctValue);
 				Console.WriteLine("guess : " + guess[0]);
 				Console.WriteLine("--");
 				if (correct)
@@ -61,7 +66,9 @@ namespace MachineLearning
 					n++;
 				}
 			}
-
+			var path = "C:\\Users\\Boudart Loic\\source\\repos\\MachineLearning\\MachineLearning\\brain.json";
+			slp.Save(path);
+			slp.Load(path);
 			//to debug
 			{
 				Random random = new Random(Guid.NewGuid().GetHashCode());
@@ -264,6 +271,11 @@ namespace MachineLearning
 		private static int XOR(int value1, int value2)
 		{
 			return value1 ^ value2;
+		}
+
+		private static int ComplexeBoolMethod(int a, int b, int c)
+		{
+			return (a & b) | (b & c);
 		}
 
 		private static void RenderMatrix(List<List<double>> matrix)

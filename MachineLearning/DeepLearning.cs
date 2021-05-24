@@ -1,14 +1,19 @@
 ﻿using MachineLearning.Calculus;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace MachineLearning
 {
+	[JsonObject]
 	public class DeepLearning : BaseLearning, IMachineLearning
 	{
 		#region Constants
@@ -23,12 +28,19 @@ namespace MachineLearning
 		#endregion
 
 		#region Private Properties
+		[JsonProperty]
 		private List<Matrix<double>> WeightsHidden;
+		[JsonProperty]
 		private List<Matrix<double>> BiasHidden;
+		[JsonProperty]
 		private List<Matrix<double>> ActivationsHiddenSigmoid;
 		#endregion
 
 		#region Ctor
+		public DeepLearning()
+		{
+
+		}
 
 		public DeepLearning(int numberInput, int nNeurons, int numberOutput, int numberOfLayers)
 		{
@@ -53,6 +65,11 @@ namespace MachineLearning
 
 			WeightsHidden.Add(CreateMatrix.Random<double>(NumberOutput, NumberNeurons, new ContinuousUniform(0, 0.1)));
 			BiasHidden.Add(CreateMatrix.Random<double>(NumberOutput, 1, new ContinuousUniform(0, 0.1)));
+		}
+
+		public void Save(string path)
+		{
+			File.WriteAllText(path, JsonConvert.SerializeObject(this));
 		}
 		#endregion
 
@@ -80,7 +97,7 @@ namespace MachineLearning
 
 		public override void Train(IList<double> datas, IList<double> expectedValues)
 		{
-			var errors = new List<Matrix<double>> ();
+			var errors = new List<Matrix<double>>();
 
 			var deltaWeight = new List<Matrix<double>>();
 			var deltaBiais = new List<Matrix<double>>();
@@ -125,6 +142,65 @@ namespace MachineLearning
 		#endregion
 
 		#region Private Methods
+		public void Load(string path)
+		{
+			string json = File.ReadAllText(path);
+			var jsonObject = JsonConvert.DeserializeObject(json) as JObject;
+			NumberInput = GetValue(jsonObject, nameof(NumberInput));
+			NumberNeurons = GetValue(jsonObject, nameof(NumberNeurons));
+			NumberOfLayers = GetValue(jsonObject, nameof(NumberOfLayers));
+			NumberOutput = GetValue(jsonObject, nameof(NumberOutput));
+
+			int GetValue(JObject jsonObject, string name)
+			{
+				return int.Parse(((JValue)jsonObject[name]).Value.ToString());
+			}
+
+			var weightsHidden = new List<Matrix<double>>();
+			var biasHidden = new List<Matrix<double>>();
+
+			ExtractMatrix(jsonObject, weightsHidden, nameof(this.WeightsHidden));
+			ExtractMatrix(jsonObject, biasHidden, nameof(this.BiasHidden), true);
+
+			void ExtractMatrix(JObject jsonObject, List<Matrix<double>> collection, string name, bool isBiais = false)
+			{
+				var array = jsonObject[name] as JArray;
+				foreach (var obj in array.OfType<JObject>())
+				{
+					Matrix<double> matrix;
+					if (obj == array.First())
+					{
+						matrix = ExtractMatrix(NumberNeurons, isBiais ? 1 : NumberInput, obj);
+					}
+					else if (obj == array.Last())
+					{
+						matrix = ExtractMatrix(NumberOutput, isBiais ? 1 : NumberInput, obj);
+					}
+					else
+					{
+						matrix = ExtractMatrix(NumberNeurons, isBiais ? 1 : NumberNeurons, obj);
+					}
+					collection.Add(matrix);
+				}
+
+				static Matrix<double> ExtractMatrix(int size1, int size2, JObject obj)
+				{
+					Matrix<double> matrix;
+					var values = obj["Values"];
+					var arrayOfDouble = ((JArray)values).Select(a => ((JValue)a).Value).Cast<double>().ToArray();
+					double[,] multiDimArray = new double[size1, size2];
+					for (int i = 0; i < size1; i++)
+					{
+						for (int j = 0; j < size2; j++)
+						{
+							multiDimArray[i, j] = arrayOfDouble[size2 * i + j];
+						}
+					}
+					matrix = Matrix<double>.Build.DenseOfArray(multiDimArray);
+					return matrix;
+				}
+			}
+		}
 
 		#endregion
 	}
